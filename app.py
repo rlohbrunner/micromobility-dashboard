@@ -1,11 +1,11 @@
-import streamlit as st
 import pandas as pd
 import numpy as np
 import geopandas as gpd
 import folium
+from shapely.geometry import LineString 
 import branca.colormap as cm
 import random
-from shapely.geometry import LineString
+import streamlit as st
 from streamlit_folium import folium_static
 
 # Streamlit UI
@@ -16,66 +16,129 @@ st.sidebar.header("Upload Data")
 uploaded_file = st.sidebar.file_uploader("Upload a .geojson file", type=["geojson"])
 
 def filter_top_1_percent(gdf):
+    """
+    Filters the GeoDataFrame to keep only the top 1% of routes based on 'count'.
+    
+    Parameters:
+        gdf (GeoDataFrame): Original dataset containing 'count' and 'geometry'.
+    
+    Returns:
+        top_1_gdf (GeoDataFrame): Filtered dataset with only the top 1% of routes.
+    """
+    # Fills in N/A values ("< 100")
     gdf['count'] = gdf['count'].fillna(0)
+    # Compute the 99th percentile threshold
     threshold = np.percentile(gdf['count'], 99)
-    return gdf[gdf['count'] >= threshold].copy()
+    # Filter the GeoDataFrame
+    top_1_gdf = gdf[gdf['count'] >= threshold].copy()
+    return top_1_gdf
 
 def merge_connected_segments(gdf):
-    def round_coords(coord):
-        return (round(coord[0], 3), round(coord[1], 3))
+    """
+    Merges connected line segments into longer "super segments."
     
+    Parameters:
+        gdf (GeoDataFrame): Contains 'geometry' with LINESTRINGs.
+    
+    Returns:
+        merged_gdf (GeoDataFrame): GeoDataFrame with merged "super segments."
+    """
+    def round_coords(coord):
+        """Round a coordinate tuple (lon, lat) to 3 decimal places."""
+        return (round(coord[0], 3), round(coord[1], 3))
+    # Extract first and last coordinates (rounded to 3 decimal places)
     gdf['first_coord'] = gdf['geometry'].apply(lambda x: round_coords(x.coords[0]))
     gdf['last_coord'] = gdf['geometry'].apply(lambda x: round_coords(x.coords[-1]))
-    
+    # Dictionary to store sequences of connected segments
     segment_groups = []
+    # Keep track of visited segments
     visited = set()
-    
+    # Function to recursively merge connected segments
     def build_super_segment(segment_idx, current_coords):
         if segment_idx in visited:
             return
         visited.add(segment_idx)
-        current_coords.extend(list(gdf.loc[segment_idx, 'geometry'].coords)[1:])
+        # Append current segment coordinates
+        current_coords.extend(list(gdf.loc[segment_idx, 'geometry'].coords)[1:])  # Avoid duplicate start points
+        # Find next segment
         next_segments = gdf[gdf['first_coord'] == gdf.loc[segment_idx, 'last_coord']].index.tolist()
         for next_idx in next_segments:
             build_super_segment(next_idx, current_coords)
-    
+    # Iterate through all segments to form super segments
     for idx in gdf.index:
         if idx not in visited:
             super_segment_coords = list(gdf.loc[idx, 'geometry'].coords)
             build_super_segment(idx, super_segment_coords)
             segment_groups.append(LineString(super_segment_coords))
-    
-    return gpd.GeoDataFrame(geometry=segment_groups, crs=gdf.crs)
+    # Create a new GeoDataFrame with merged "super segments"
+    merged_gdf = gpd.GeoDataFrame(geometry=segment_groups, crs=gdf.crs, )
+    return merged_gdf
 
 def plot_linestrings(gdf):
+    """
+    Creates a Ride Report-style map with:
+    - A step colormap based on quartiles of the trip count data.
+    - A light grey basemap for better contrast.
+    - Scaled line widths based on percentage.
+    - A color legend displaying actual min/max trip counts while mapping log-transformed colors.
+    
+    Parameters:
+        gdf (GeoDataFrame): Contains 'count' and 'percentage' fields.
+    
+    Returns:
+        folium.Map: Interactive map styled like Ride Report.
+    """
+    # Ensure CRS is WGS84
     gdf = gdf.to_crs(epsg=4326)
+    # Convert to projected CRS for accurate centroid calculation
     projected_gdf = gdf.to_crs(epsg=32616)
     center_lat = projected_gdf.geometry.centroid.to_crs(epsg=4326).y.median()
     center_lon = projected_gdf.geometry.centroid.to_crs(epsg=4326).x.median()
-    
+    # Initialize Folium map with light basemap
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="CartoDB Positron")
-    
+    # Checks for counts
     if 'count' in gdf.columns:
-        gdf['count'] = gdf['count'].fillna(1)
-        gdf['percentage'] = gdf['percentage'].fillna(1)
-        quantiles = np.percentile(gdf['count'], [60, 80, 95, 99, 99.5, 99.95])
-        color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#7d3c98', '#572a6a']
-        colormap = cm.StepColormap(colors=color_steps, index=quantiles.tolist(), vmin=quantiles[0], vmax=quantiles[-1])
-        min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()
-        
-        def scale_width(value, min_val, max_val):
-            return 4 + 8 * ((value - min_val) / (max_val - min_val) if max_val > min_val else 1)
-        
-        for _, row in gdf.iterrows():
-            if row.geometry.geom_type == 'LineString':
-                coords = [(point[1], point[0]) for point in row.geometry.coords]
-                color = colormap(row['count'])
-                width = scale_width(row['percentage'], min_percentage, max_percentage)
-                folium.PolyLine(coords, color=color, weight=width, opacity=0.8, tooltip=f"Count: {row['count']}, Percentage: {row['percentage']}").add_to(m)
-        
-        colormap.caption = "Trip Density"
-        colormap.add_to(m)
-    
+      # Handle missing values in 'count' and 'percentage'
+      gdf['count'] = gdf['count'].fillna(1)  # Avoid log(0)
+      gdf['percentage'] = gdf['percentage'].fillna(1)  # Default to small width
+      # Compute quartile breaks for Step Colormap
+      quantiles = np.percentile(gdf['count'], [60, 80, 95, 99, 99.5, 99.95])
+      color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#7d3c98', '#572a6a']
+      # Define StepColormap based on quantiles
+      colormap = cm.StepColormap(
+          colors=color_steps,
+          index=quantiles.tolist(),  # Ensure step values match percentiles
+          vmin=quantiles[0], vmax=quantiles[-1]
+          #vmin=gdf['count'].min(), vmax=gdf['count'].max()
+      )
+      # Normalize percentage for line width scaling
+      min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()
+      def scale_width(value, min_val, max_val):
+          """Scales line width between 1 and 5 based on percentage."""
+          return 4 + 8 * ((value - min_val) / (max_val - min_val) if max_val > min_val else 1)
+      # Add line geometries to the map with colors & widths
+      for _, row in gdf.iterrows():
+          if row.geometry.geom_type == 'LineString':
+              coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
+              color = colormap(row['count'])  # ✅ Step colormap applied
+              width = scale_width(row['percentage'], min_percentage, max_percentage)  # Scale width
+              folium.PolyLine(coords, color=color, weight=width, opacity=0.8, 
+                              tooltip=f"Count: {row['count']}, Percentage: {row['percentage']}").add_to(m)
+      # Fix colormap legend to show quartile step values
+      colormap.caption = "Trip Density"
+      colormap.add_to(m)
+    else:
+      # Use random colors for each segment
+      random.seed(42)
+      colors = [f'#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}' for _ in range(len(gdf))]
+      # Add line geometries to the map
+      for i, (row, color) in enumerate(zip(gdf.iterrows(), colors)):
+          row = row[1]  # Extract row data
+          coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
+          folium.PolyLine(
+              coords, color=color, weight=5, opacity=0.8, 
+              tooltip=f"Segment {i}"
+          ).add_to(m)
     return m
 
 if uploaded_file:

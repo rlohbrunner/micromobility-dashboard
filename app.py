@@ -179,7 +179,7 @@ if uploaded_file:
         "Filter routes with at least X trips:", 
         min_value=0, 
         max_value=max_trip_count, 
-        value=min(10, max_trip_count),  # Default value
+        value=min(900, max_trip_count),  # Default value
         step=1
     )
 

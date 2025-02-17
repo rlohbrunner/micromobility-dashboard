@@ -170,10 +170,29 @@ def summary_statistics(gdf):
 
 if uploaded_file:
     gdf = gpd.read_file(uploaded_file)
-    # top_1_gdf = filter_top_1_percent(gdf)
-    # merged_gdf = merge_connected_segments(top_1_gdf)
+
+    # Get the max trip count for input validation
+    max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 0
+
+    # Numeric input for filtering (forcing bounds)
+    min_trip_count = st.sidebar.number_input(
+        "Filter routes with at least X trips:", 
+        min_value=0, 
+        max_value=max_trip_count, 
+        value=min(10, max_trip_count),  # Default value
+        step=1
+    )
+
+    # Apply filter button
+    apply_filter = st.sidebar.button("Apply Filter")
+
+    # Apply filtering only when the button is clicked
+    if apply_filter:
+        gdf = gdf[gdf['count'] >= min_trip_count]
+
     st.subheader("Routes")
     map_output = plot_linestrings(gdf)
     folium_static(map_output)
+
     # Display summary statistics
     summary_statistics(gdf)

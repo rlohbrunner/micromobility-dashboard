@@ -141,11 +141,39 @@ def plot_linestrings(gdf):
           ).add_to(m)
     return m
 
+def summary_statistics(gdf):
+    """
+    Computes and displays summary statistics for the GeoDataFrame.
+
+    Parameters:
+        gdf (GeoDataFrame): Contains 'count' and 'geometry' fields.
+    """
+    # Compute total number of routes
+    total_routes = len(gdf)
+
+    # Compute trip count statistics if 'count' exists
+    if 'count' in gdf.columns:
+        min_count = gdf['count'].min()
+        q1_count = gdf['count'].quantile(0.25)  # 1st quartile (25th percentile)
+        median_count = gdf['count'].median()  # 2nd quartile (50th percentile)
+        q3_count = gdf['count'].quantile(0.75)  # 3rd quartile (75th percentile)
+        max_count = gdf['count'].max()
+    else:
+        min_count = q1_count = median_count = q3_count = max_count = "N/A"
+
+    # Display summary statistics in Streamlit
+    st.subheader("Summary Statistics")
+    st.write(f"**Total Routes:** {total_routes}")
+    st.write(f"**Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count} / {q1_count:.2f} / {median_count} / {q3_count:.2f} / {max_count}")
+
+
+
 if uploaded_file:
     gdf = gpd.read_file(uploaded_file)
-    top_1_gdf = filter_top_1_percent(gdf)
-    merged_gdf = merge_connected_segments(top_1_gdf)
-    
-    st.subheader("Filtered and Merged Routes")
-    map_output = plot_linestrings(merged_gdf)
+    # top_1_gdf = filter_top_1_percent(gdf)
+    # merged_gdf = merge_connected_segments(top_1_gdf)
+    st.subheader("Routes")
+    map_output = plot_linestrings(gdf)
     folium_static(map_output)
+    # Display summary statistics
+    summary_statistics(gdf)

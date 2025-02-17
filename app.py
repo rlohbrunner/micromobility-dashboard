@@ -8,13 +8,7 @@ import random
 import streamlit as st
 from streamlit_folium import folium_static
 
-# Streamlit UI
-st.title("Micromobility Route Analysis")
-st.sidebar.header("Upload Data")
-
-# File uploader
-uploaded_file = st.sidebar.file_uploader("Upload a .geojson file", type=["geojson"])
-
+# FUNCTIONS
 def filter_top_1_percent(gdf):
     """
     Filters the GeoDataFrame to keep only the top 1% of routes based on 'count'.
@@ -167,32 +161,52 @@ def summary_statistics(gdf):
     st.write(f"**Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count} / {q1_count:.2f} / {median_count} / {q3_count:.2f} / {max_count}")
 
 
+# STREAMLIT UI
+st.title("Micromobility Route Analysis")
+st.sidebar.header("Select Data Quarter")
 
-if uploaded_file:
-    gdf = gpd.read_file(uploaded_file)
+# Define mapping of quarters to GitHub file URLs
+GITHUB_BASE_URL = "https://raw.githubusercontent.com/rlohbrunnerE/micromobility-dashboard/main/data/"
+QUARTER_FILES = {
+    "Q1": f"{GITHUB_BASE_URL}routes_Q1.geojson",
+    "Q2": f"{GITHUB_BASE_URL}routes_Q2.geojson",
+    "Q3": f"{GITHUB_BASE_URL}routes_Q3.geojson",
+    "Q4": f"{GITHUB_BASE_URL}routes_Q4.geojson"
+}
 
-    # Get the max trip count for input validation
-    max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 0
+# Dropdown for quarter selection
+selected_quarter = st.sidebar.selectbox("Select a quarter:", list(QUARTER_FILES.keys()))
 
-    # Numeric input for filtering (forcing bounds)
-    min_trip_count = st.sidebar.number_input(
-        "Filter routes with at least X trips:", 
-        min_value=0, 
-        max_value=max_trip_count, 
-        value=min(900, max_trip_count),  # Default value
-        step=1
-    )
+# Load data from GitHub
+@st.cache_data
+def load_geojson(url):
+    return gpd.read_file(url)
 
-    # Apply filter button
-    apply_filter = st.sidebar.button("Apply Filter")
+# Fetch and load the selected dataset
+gdf = load_geojson(QUARTER_FILES[selected_quarter])
 
-    # Apply filtering only when the button is clicked
-    if apply_filter:
-        gdf = gdf[gdf['count'] >= min_trip_count]
+# Get max trip count for filtering
+max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 0
 
-    st.subheader("Routes")
-    map_output = plot_linestrings(gdf)
-    folium_static(map_output)
+# Numeric input for filtering (forcing bounds)
+min_trip_count = st.sidebar.number_input(
+    "Filter routes with at least X trips:", 
+    min_value=0, 
+    max_value=max_trip_count, 
+    value=min(10, max_trip_count),  # Default value
+    step=1
+)
 
-    # Display summary statistics
-    summary_statistics(gdf)
+# Apply filter button
+apply_filter = st.sidebar.button("Apply Filter")
+
+# Apply filtering only when the button is clicked
+if apply_filter:
+    gdf = gdf[gdf['count'] >= min_trip_count]
+
+st.subheader("Routes")
+map_output = plot_linestrings(gdf)
+folium_static(map_output)
+
+# Display summary statistics
+summary_statistics(gdf)

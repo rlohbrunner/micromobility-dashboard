@@ -166,7 +166,7 @@ st.title("Micromobility Route Analysis")
 st.sidebar.header("Select Data Quarter")
 
 # Define mapping of quarters to GitHub file URLs
-GITHUB_BASE_URL = "https://raw.githubusercontent.com/rlohbrunnerE/micromobility-dashboard/main/data/"
+GITHUB_BASE_URL = "https://raw.githubusercontent.com/rlohbrunner/micromobility-dashboard/main/data/"
 QUARTER_FILES = {
     "Q1": f"{GITHUB_BASE_URL}routes_Q1.geojson",
     "Q2": f"{GITHUB_BASE_URL}routes_Q2.geojson",
@@ -193,7 +193,7 @@ min_trip_count = st.sidebar.number_input(
     "Filter routes with at least X trips:", 
     min_value=0, 
     max_value=max_trip_count, 
-    value=min(10, max_trip_count),  # Default value
+    value=min(0, max_trip_count),  # Default value
     step=1
 )
 

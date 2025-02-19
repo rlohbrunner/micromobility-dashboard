@@ -7,6 +7,7 @@ import branca.colormap as cm
 import random
 import streamlit as st
 from streamlit_folium import folium_static
+import os
 
 # FUNCTIONS
 def filter_top_1_percent(gdf):
@@ -162,51 +163,63 @@ def summary_statistics(gdf):
 
 
 # STREAMLIT UI
-st.title("Micromobility Route Analysis")
-st.sidebar.header("Select Data Quarter")
+st.title("Atlanta 2024 Scooter Route Analysis")
+st.sidebar.header("Filters")
 
-# Define mapping of quarters to GitHub file URLs
-GITHUB_BASE_URL = "https://raw.githubusercontent.com/rlohbrunner/micromobility-dashboard/main/data/"
+# Define the local data path
+DATA_DIR = "data/"
+
 QUARTER_FILES = {
-    "Q1": f"{GITHUB_BASE_URL}routes_Q1.geojson",
-    "Q2": f"{GITHUB_BASE_URL}routes_Q2.geojson",
-    "Q3": f"{GITHUB_BASE_URL}routes_Q3.geojson",
-    "Q4": f"{GITHUB_BASE_URL}routes_Q4.geojson"
+    "Q1": os.path.join(DATA_DIR, "routes_Q1.geojson"),
+    "Q2": os.path.join(DATA_DIR, "routes_Q2.geojson"),
+    "Q3": os.path.join(DATA_DIR, "routes_Q3.geojson"),
+    "Q4": os.path.join(DATA_DIR, "routes_Q4.geojson"),
 }
 
 # Dropdown for quarter selection
-selected_quarter = st.sidebar.selectbox("Select a quarter:", list(QUARTER_FILES.keys()))
+selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_FILES.keys()))
 
-# Load data from GitHub
+# Load data from local file system
 @st.cache_data
-def load_geojson(url):
-    return gpd.read_file(url)
+def load_geojson(file_path):
+    return gpd.read_file(file_path)
 
 # Fetch and load the selected dataset
 gdf = load_geojson(QUARTER_FILES[selected_quarter])
 
 # Get max trip count for filtering
-max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 0
+max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 50
 
 # Numeric input for filtering (forcing bounds)
 min_trip_count = st.sidebar.number_input(
-    "Filter routes with at least X trips:", 
+    "Filter to only show routes with at least X scooter trips passing through it during the quarter:", 
     min_value=0, 
     max_value=max_trip_count, 
-    value=min(0, max_trip_count),  # Default value
+    value=min(900, max_trip_count),  # Default value
     step=1
 )
 
-# Apply filter button
-apply_filter = st.sidebar.button("Apply Filter")
+# Button to apply filter
+if "filter_applied" not in st.session_state:
+    st.session_state.filter_applied = False  # Initialize session state
 
-# Apply filtering only when the button is clicked
-if apply_filter:
-    gdf = gdf[gdf['count'] >= min_trip_count]
+if st.sidebar.button("Apply Filter"):
+    st.session_state.filter_applied = True  # Update session state
+    gdf = gdf[gdf['count'] >= min_trip_count]  # Apply filtering
 
-st.subheader("Routes")
-map_output = plot_linestrings(gdf)
-folium_static(map_output)
-
-# Display summary statistics
-summary_statistics(gdf)
+# Display content based on whether the filter is applied
+if not st.session_state.filter_applied:
+    st.subheader("About this website")
+    st.write(
+        "Welcome to Ryan Lohbrunner's **Micromobility Data Analysis** tool! 🛴📊\n\n"
+        "Use the filters in the sidebar to select a quarter and specify a minimum trip count."
+        "A few seconds (~5-20) after applying the filter, an interactive map will pop up and display the scooter routes "
+        "in the city, along with key statistics. This web app is currently under development and will include new "
+        "features, cities, time periods, vehicle types, and data tools within the following weeks."
+        "Data ~~stolen~~ scraped from Ride Report, found at public.ridereport.com.")
+else:
+    st.subheader("Routes")
+    map_output = plot_linestrings(gdf)
+    folium_static(map_output)
+    # Display summary statistics
+    summary_statistics(gdf)

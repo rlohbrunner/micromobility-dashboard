@@ -212,10 +212,10 @@ if not st.session_state.filter_applied:
     st.subheader("About this website")
     st.write(
         "Welcome to Ryan Lohbrunner's **Micromobility Data Analysis** tool! 🛴📊\n\n"
-        "Use the filters in the sidebar to select a quarter and specify a minimum trip count."
+        "Use the filters in the sidebar to select a quarter and specify a minimum trip count. "
         "A few seconds (~5-20) after applying the filter, an interactive map will pop up and display the scooter routes "
         "in the city, along with key statistics. This web app is currently under development and will include new "
-        "features, cities, time periods, vehicle types, and data tools within the following weeks."
+        "features, cities, time periods, vehicle types, and data tools within the following weeks. "
         "Data ~~stolen~~ scraped from Ride Report, found at public.ridereport.com.")
 else:
     st.subheader("Routes")

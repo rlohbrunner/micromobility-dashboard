@@ -8,6 +8,7 @@ import random
 import streamlit as st
 from streamlit_folium import folium_static
 import os
+from scipy.stats import percentileofscore 
 
 # FUNCTIONS
 def filter_top_1_percent(gdf):
@@ -91,49 +92,67 @@ def plot_linestrings(gdf):
     center_lon = projected_gdf.geometry.centroid.to_crs(epsg=4326).x.median()
     # Initialize Folium map with light basemap
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="CartoDB Positron")
+    
     # Checks for counts
     if 'count' in gdf.columns:
-      # Handle missing values in 'count' and 'percentage'
-      gdf['count'] = gdf['count'].fillna(1)  # Avoid log(0)
-      gdf['percentage'] = gdf['percentage'].fillna(1)  # Default to small width
-      # Compute quartile breaks for Step Colormap
-      quantiles = np.percentile(gdf['count'], [60, 80, 95, 99, 99.5, 99.95])
-      color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#7d3c98', '#572a6a']
-      # Define StepColormap based on quantiles
-      colormap = cm.StepColormap(
-          colors=color_steps,
-          index=quantiles.tolist(),  # Ensure step values match percentiles
-          vmin=quantiles[0], vmax=quantiles[-1]
-          #vmin=gdf['count'].min(), vmax=gdf['count'].max()
-      )
-      # Normalize percentage for line width scaling
-      min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()
-      def scale_width(value, min_val, max_val):
-          """Scales line width between 1 and 5 based on percentage."""
-          return 4 + 8 * ((value - min_val) / (max_val - min_val) if max_val > min_val else 1)
-      # Add line geometries to the map with colors & widths
-      for _, row in gdf.iterrows():
-          if row.geometry.geom_type == 'LineString':
-              coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
-              color = colormap(row['count'])  # ✅ Step colormap applied
-              width = scale_width(row['percentage'], min_percentage, max_percentage)  # Scale width
-              folium.PolyLine(coords, color=color, weight=width, opacity=0.8, 
-                              tooltip=f"Count: {row['count']}, Percentage: {row['percentage']}").add_to(m)
-      # Fix colormap legend to show quartile step values
-      colormap.caption = "Trip Density"
-      colormap.add_to(m)
+        # Handle missing values in 'count' and 'percentage'
+        gdf['count'] = gdf['count'].fillna(50)  # Avoid log(0)
+        gdf['percentage'] = gdf['percentage'].fillna(0.001)  # Default to small width
+
+        # Compute percentile ranking for each count value
+        gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
+
+        # Compute quartile breaks for Step Colormap
+        quantiles = np.percentile(gdf['count'], [20, 40, 60, 80, 100])
+        color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
+        # Define StepColormap based on quantiles
+        colormap = cm.StepColormap(
+            colors=color_steps,
+            index=quantiles.tolist(),  # Ensure step values match percentiles
+            vmin=quantiles[0], vmax=quantiles[-1]
+        )
+
+        # Normalize percentage for line width scaling
+        min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()
+
+        def scale_width(value, min_val, max_val):
+            """Scales line width between 1 and 5 based on percentage."""
+            return 6 + 2 * ((value - min_val) / (max_val - min_val) if max_val > min_val else 1)
+
+        # Add line geometries to the map with colors & widths
+        for _, row in gdf.iterrows():
+            if row.geometry.geom_type == 'LineString':
+                coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
+                color = colormap(row['count'])  # ✅ Step colormap applied
+                width = scale_width(row['percentage'], min_percentage, max_percentage)  # Scale width
+
+                # 🏆 Format tooltip: round percentage & percentile
+                tooltip_text = (
+                    f"Count of Trips Passing Through This Segment: {row['count']}<br>"
+                    f"Percent of Total Period Trips: {row['percentage']:.2f}%<br>"
+                    f"Count Percentile in Comparison to Other Segments: {row['percentile']:.2f}%"
+                )
+
+                folium.PolyLine(coords, color=color, weight=width, opacity=0.8, 
+                                tooltip=tooltip_text).add_to(m)
+
+        # Fix colormap legend to show quartile step values
+        colormap.caption = "Trip Density"
+        colormap.add_to(m)
     else:
-      # Use random colors for each segment
-      random.seed(42)
-      colors = [f'#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}' for _ in range(len(gdf))]
-      # Add line geometries to the map
-      for i, (row, color) in enumerate(zip(gdf.iterrows(), colors)):
-          row = row[1]  # Extract row data
-          coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
-          folium.PolyLine(
-              coords, color=color, weight=5, opacity=0.8, 
-              tooltip=f"Segment {i}"
-          ).add_to(m)
+        # Use random colors for each segment
+        random.seed(42)
+        colors = [f'#{random.randint(0, 255):02x}{random.randint(0, 255):02x}{random.randint(0, 255):02x}' for _ in range(len(gdf))]
+
+        # Add line geometries to the map
+        for i, (row, color) in enumerate(zip(gdf.iterrows(), colors)):
+            row = row[1]  # Extract row data
+            coords = [(point[1], point[0]) for point in row.geometry.coords]  # folium uses (lat, lon)
+            folium.PolyLine(
+                coords, color=color, weight=5, opacity=0.8, 
+                tooltip=f"Segment {i}"
+            ).add_to(m)
+
     return m
 
 def summary_statistics(gdf):
@@ -177,7 +196,7 @@ QUARTER_FILES = {
 }
 
 # Dropdown for quarter selection
-selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_FILES.keys()))
+selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_FILES.keys()), index=1)
 
 # Load data from local file system
 @st.cache_data
@@ -195,7 +214,7 @@ min_trip_count = st.sidebar.number_input(
     "Filter to only show routes with at least X scooter trips passing through it during the quarter:", 
     min_value=0, 
     max_value=max_trip_count, 
-    value=min(900, max_trip_count),  # Default value
+    value=min(4500, max_trip_count),  # Default value
     step=1
 )
 

@@ -179,7 +179,7 @@ def summary_statistics(gdf):
     # Display summary statistics in Streamlit
     st.subheader("Summary Statistics")
     st.write(f"**Total Route Segments in Selection:** {total_routes}")
-    st.write(f"**Per Segment Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count.0f} / {q1_count:.0f} / {median_count.0f} / {q3_count:.0f} / {max_count.0f}")
+    st.write(f"**Per Segment Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count:.0f} / {q1_count:.0f} / {median_count:.0f} / {q3_count:.0f} / {max_count:.0f}")
 
 
 # STREAMLIT UI

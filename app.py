@@ -117,7 +117,7 @@ def plot_linestrings(gdf):
         colormap = cm.LinearColormap(
             colors=color_steps,
             vmin=vmin, vmax=vmax
-        ).to_step(index=breakpoints.tolist())  # Ensures steps align with breakpoints
+        )
         
         # Add labels for readability
         colormap.tick_labels = breakpoints.tolist()  # Use actual breakpoints

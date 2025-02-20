@@ -102,14 +102,27 @@ def plot_linestrings(gdf):
         # Compute percentile ranking for each count value
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
-        # Compute quartile breaks for Step Colormap
-        quantiles = np.percentile(gdf['count'], [20, 40, 60, 80, 100])
+        # Define the number of categories
+        num_categories = 5  # Adjust this as needed
+        
+        # Drop NaN values to ensure proper binning
+        counts = gdf['count'].values
+        
+        # Compute equal-frequency bins (percentiles ensuring equal number of points)
+        bins = np.interp(
+            np.linspace(0, len(counts), num_categories + 1),
+            np.arange(len(counts)),
+            np.sort(counts)
+        )
+        
+        # Define colors for each bin
         color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
-        # Define StepColormap based on quantiles
+        
+        # Define StepColormap based on computed equal-frequency bins
         colormap = cm.StepColormap(
             colors=color_steps,
-            index=quantiles.tolist(),  # Ensure step values match percentiles
-            vmin=0, vmax=1
+            index=bins.tolist(),  # Breaks ensure equal-sized groups
+            vmin=gdf['count'].min(), vmax=gdf['count'].max()
         )
 
         # Normalize percentage for line width scaling

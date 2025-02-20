@@ -105,13 +105,13 @@ def plot_linestrings(gdf):
         # Define dynamic breakpoints using logarithmic scaling
         counts = gdf['count'].values
         vmin, vmax = counts.min(), counts.max()
-        num_bins = 7  # Adjust for finer/smoother color transitions
+        num_bins = 6  # Adjust for finer/smoother color transitions
         
         # Create log-spaced bins between min and max
         breakpoints = np.geomspace(vmin, vmax, num_bins).astype(int)
         
         # Define a matching color scale
-        color_steps = ['#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f', '#3f007d', '#1b0c41']
+        color_steps = ['#f4a582', '#d6604d', '#b2182b', '#67001f', '#3f007d', '#1b0c41']
         
         # Create a LinearColormap for smooth blending
         colormap = cm.LinearColormap(

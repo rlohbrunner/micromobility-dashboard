@@ -122,7 +122,7 @@ def plot_linestrings(gdf):
         colormap = cm.StepColormap(
             colors=color_steps,
             index=bins.tolist(),  # Breaks ensure equal-sized groups
-            vmin=gdf['count'].min(), vmax=gdf['count'].max()
+            #vmin=gdf['count'].min(), vmax=gdf['count'].max()
         )
 
         # Normalize percentage for line width scaling

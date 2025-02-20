@@ -105,7 +105,7 @@ def plot_linestrings(gdf):
         # Compute quartile breaks for Step Colormap
         quantiles = np.percentile(gdf['count'], [0, 30, 50, 70, 90])
         
-        color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
+        color_steps = ['#a2d9ce', '#53bf7f', '#85c1e9', '#bd8cd2', '#572a6a']
         # Define StepColormap based on quantiles
         colormap = cm.StepColormap(
             colors=color_steps,
@@ -178,8 +178,8 @@ def summary_statistics(gdf):
 
     # Display summary statistics in Streamlit
     st.subheader("Summary Statistics")
-    st.write(f"**Total Routes:** {total_routes}")
-    st.write(f"**Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count} / {q1_count:.2f} / {median_count} / {q3_count:.2f} / {max_count}")
+    st.write(f"**Total Route Segments in Selection:** {total_routes}")
+    st.write(f"**Per Segment Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count.0f} / {q1_count:.0f} / {median_count.0f} / {q3_count:.0f} / {max_count.0f}")
 
 
 # STREAMLIT UI

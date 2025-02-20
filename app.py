@@ -109,11 +109,11 @@ def plot_linestrings(gdf):
         counts = gdf['count'].values
         
         # Compute equal-frequency bins (percentiles ensuring equal number of points)
-        bins = np.interp(
+        bins = list(np.interp(
             np.linspace(0, len(counts), num_categories + 1),
             np.arange(len(counts)),
             np.sort(counts)
-        )
+        ))
         
         # Define colors for each bin
         color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
@@ -121,8 +121,8 @@ def plot_linestrings(gdf):
         # Define StepColormap based on computed equal-frequency bins
         colormap = cm.StepColormap(
             colors=color_steps,
-            index=bins.tolist(),  # Breaks ensure equal-sized groups
-            #vmin=gdf['count'].min(), vmax=gdf['count'].max()
+            index=bins,  # Breaks ensure equal-sized groups
+            vmin=bins[0], vmax=bins[-1]
         )
 
         # Normalize percentage for line width scaling

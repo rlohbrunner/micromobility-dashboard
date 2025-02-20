@@ -103,7 +103,7 @@ def plot_linestrings(gdf):
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
         # Compute quartile breaks for Step Colormap
-        quantiles = np.percentile(gdf['count'], [10, 30, 50, 70, 80])
+        quantiles = np.percentile(gdf['count'], [0, 30, 50, 70, 90])
         
         color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
         # Define StepColormap based on quantiles
@@ -139,7 +139,7 @@ def plot_linestrings(gdf):
 
         # Fix colormap legend to show quartile step values
         #colormap.caption = "Trip Density"
-        colormap.add_to(m)
+        #colormap.add_to(m)
     else:
         # Use random colors for each segment
         random.seed(42)
@@ -204,9 +204,6 @@ selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_F
 def load_geojson(file_path):
     return gpd.read_file(file_path)
 
-# Fetch and load the selected dataset
-gdf = load_geojson(QUARTER_FILES[selected_quarter])
-
 # Get max trip count for filtering
 max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 50
 
@@ -225,6 +222,7 @@ if "filter_applied" not in st.session_state:
 
 if st.sidebar.button("Apply Filter"):
     st.session_state.filter_applied = True  # Update session state
+    gdf = load_geojson(QUARTER_FILES[selected_quarter]) # Fetch and load the selected dataset
     gdf = gdf[gdf['count'] >= min_trip_count]  # Apply filtering
 
 # Display content based on whether the filter is applied

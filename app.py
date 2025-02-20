@@ -102,28 +102,25 @@ def plot_linestrings(gdf):
         # Compute percentile ranking for each count value
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
-        # Define the number of categories
-        num_categories = 5  # Adjust this as needed
+        # Define dynamic breakpoints using logarithmic scaling
+        counts = list(gdf['count'].values)
+        vmin, vmax = counts.min(), counts.max()
+        num_bins = 7  # Adjust for finer/smoother color transitions
         
-        # Drop NaN values to ensure proper binning
-        counts = gdf['count'].values
+        # Create log-spaced bins between min and max
+        breakpoints = np.geomspace(vmin, vmax, num_bins).astype(int)
         
-        # Compute equal-frequency bins (percentiles ensuring equal number of points)
-        bins = list(np.interp(
-            np.linspace(0, len(counts), num_categories + 1),
-            np.arange(len(counts)),
-            np.sort(counts)
-        ))
+        # Define a matching color scale
+        color_steps = ['#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f', '#3f007d', '#1b0c41']
         
-        # Define colors for each bin
-        color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
-        
-        # Define StepColormap based on computed equal-frequency bins
-        colormap = cm.StepColormap(
+        # Create a LinearColormap for smooth blending
+        colormap = cm.LinearColormap(
             colors=color_steps,
-            index=bins,  # Breaks ensure equal-sized groups
-            vmin=bins[0], vmax=bins[-2]
-        )
+            vmin=vmin, vmax=vmax
+        ).to_step(index=breakpoints.tolist())  # Ensures steps align with breakpoints
+        
+        # Add labels for readability
+        colormap.tick_labels = breakpoints.tolist()  # Use actual breakpoints
 
         # Normalize percentage for line width scaling
         min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()

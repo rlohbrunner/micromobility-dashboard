@@ -102,27 +102,15 @@ def plot_linestrings(gdf):
         # Compute percentile ranking for each count value
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
-        # Define dynamic breakpoints using logarithmic scaling
-        counts = gdf['count'].values
-        vmin, vmax = counts.min(), counts.max()
-        num_bins = 6  # Adjust for finer/smoother color transitions
-        
-        # Create log-spaced bins between min and max
-        breakpoints = np.geomspace(vmin, vmax, num_bins).astype(int)
-        
-        # Define a matching color scale
-        color_steps = ['#f4a582', '#d6604d', '#b2182b', '#67001f', '#3f007d', '#1b0c41']
-        
-        # Create a LinearColormap for smooth blending
-        colormap = cm.LinearColormap(
+        # Compute quartile breaks for Step Colormap
+        quantiles = np.percentile(gdf['count'], [40, 80, 90, 99, 100])
+        color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
+        # Define StepColormap based on quantiles
+        colormap = cm.StepColormap(
             colors=color_steps,
-            vmin=vmin, vmax=vmax
+            index=quantiles.tolist(),  # Ensure step values match percentiles
+            vmin=quantiles[0], vmax=quantiles[-1]
         )
-        
-        # Add labels for readability
-        colormap.tick_labels = breakpoints.tolist()  # Use actual breakpoints
-        #colormap.width = '80%'
-        colormap.height = 20
 
         # Normalize percentage for line width scaling
         min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()

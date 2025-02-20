@@ -204,6 +204,9 @@ selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_F
 def load_geojson(file_path):
     return gpd.read_file(file_path)
 
+# Loads initial geojson
+gdf = load_geojson(QUARTER_FILES[selected_quarter])
+
 # Get max trip count for filtering
 max_trip_count = int(gdf['count'].max()) if 'count' in gdf.columns else 50
 

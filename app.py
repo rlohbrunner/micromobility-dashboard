@@ -109,7 +109,7 @@ def plot_linestrings(gdf):
         colormap = cm.StepColormap(
             colors=color_steps,
             index=quantiles.tolist(),  # Ensure step values match percentiles
-            vmin=gdf['count'].min(), vmax=quantiles[-1]
+            vmin=gdf['count'].min(), vmax=gdf['count'].max()
         )
 
         # Normalize percentage for line width scaling

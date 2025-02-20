@@ -59,3 +59,4 @@ urllib3==2.3.0
 websocket-client==1.8.0
 wsproto==1.2.0
 xyzservices==2025.1.0
+scipy==1.15.2

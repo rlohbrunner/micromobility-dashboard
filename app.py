@@ -197,7 +197,7 @@ QUARTER_FILES = {
 }
 
 # Dropdown for quarter selection
-selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_FILES.keys()), index=1)
+selected_quarter = st.sidebar.selectbox("Select a 2024 Quarter:", list(QUARTER_FILES.keys()), index=2)
 
 # Load data from local file system
 @st.cache_data

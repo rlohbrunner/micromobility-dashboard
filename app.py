@@ -121,7 +121,7 @@ def plot_linestrings(gdf):
         
         # Add labels for readability
         colormap.tick_labels = breakpoints.tolist()  # Use actual breakpoints
-        #colormap.width = '80%'
+        colormap.width = '80%'
         #colormap.height = 20
 
         # Normalize percentage for line width scaling

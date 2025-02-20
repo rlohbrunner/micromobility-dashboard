@@ -121,6 +121,8 @@ def plot_linestrings(gdf):
         
         # Add labels for readability
         colormap.tick_labels = breakpoints.tolist()  # Use actual breakpoints
+        colormap.width = '80%'
+        colormap.height = 20
 
         # Normalize percentage for line width scaling
         min_percentage, max_percentage = gdf['percentage'].min(), gdf['percentage'].max()
@@ -147,9 +149,7 @@ def plot_linestrings(gdf):
                                 tooltip=tooltip_text).add_to(m)
 
         # Fix colormap legend to show quartile step values
-        colormap.caption = "Trip Density"
-        colormap.width = '80%'
-        colormap.height = 20
+        #colormap.caption = "Trip Density"
         colormap.add_to(m)
     else:
         # Use random colors for each segment

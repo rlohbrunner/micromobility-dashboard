@@ -103,13 +103,13 @@ def plot_linestrings(gdf):
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
         # Compute quartile breaks for Step Colormap
-        quantiles = np.percentile(gdf['count'], [10, 30, 50, 70, 80])
+        quantiles = np.percentile(gdf['count'], [10, 30, 50, 70, 80, 90])
         color_steps = ['#53bf7f', '#a2d9ce', '#85c1e9', '#bd8cd2', '#572a6a']
         # Define StepColormap based on quantiles
         colormap = cm.StepColormap(
             colors=color_steps,
             index=quantiles.tolist(),  # Ensure step values match percentiles
-            vmin=gdf['count'].min(), vmax=gdf['count'].max()
+            vmin=gdf['count'].min(), vmax=quantiles[-1]
         )
 
         # Normalize percentage for line width scaling

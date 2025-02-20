@@ -148,6 +148,8 @@ def plot_linestrings(gdf):
 
         # Fix colormap legend to show quartile step values
         colormap.caption = "Trip Density"
+        colormap.width = '80%'
+        colormap.height = 20
         colormap.add_to(m)
     else:
         # Use random colors for each segment

@@ -103,7 +103,7 @@ def plot_linestrings(gdf):
         gdf['percentile'] = gdf['count'].apply(lambda x: percentileofscore(gdf['count'], x))
 
         # Define dynamic breakpoints using logarithmic scaling
-        counts = list(gdf['count'].values)
+        counts = gdf['count'].values
         vmin, vmax = counts.min(), counts.max()
         num_bins = 7  # Adjust for finer/smoother color transitions
         

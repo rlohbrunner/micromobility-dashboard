@@ -16,7 +16,7 @@ from functions2 import (
     plot_linestrings, 
     summary_statistics,
     plot_trip_count_histogram,
-    plot_trip_count_histogram_flipped
+    plot_trip_count_cumulative
 )
 
 # STREAMLIT UI
@@ -95,7 +95,8 @@ else:
     folium_static(map_output)
     # Display Histograms
     plot_trip_count_histogram(st.session_state.gdf)
-    plot_trip_count_histogram_flipped(st.session_state.gdf)
+    # Plots CDF
+    plot_trip_count_cumulative(st.session_state.gdf)
     # Display summary statistics
     summary_statistics(st.session_state.gdf)
 

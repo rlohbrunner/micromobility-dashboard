@@ -206,29 +206,41 @@ def plot_trip_count_histogram(gdf):
 
         st.pyplot(fig)
 
-def plot_trip_count_histogram_flipped(gdf):
+def plot_trip_count_cumulative(gdf):
     """
-    Plots a flipped histogram where the y-axis represents trip count bins, and
-    the x-axis represents the number of segments in each bin.
+    Plots a cumulative distribution answering:
+    "What percentage of segments account for what percentage of trips?"
 
     Parameters:
         gdf (GeoDataFrame): Data containing the 'count' column.
 
     Returns:
-        None (Displays histogram in Streamlit)
+        None (Displays cumulative distribution in Streamlit)
     """
     if 'count' in gdf.columns:
-        st.subheader("Trip Count Distribution (Flipped)")
+        st.subheader("Cumulative Trip Distribution")
 
-        # Compute histogram bins
-        bins = np.histogram_bin_edges(gdf['count'], bins=30)  # Create bins
-        hist, bin_edges = np.histogram(gdf['count'], bins=bins)  # Get counts per bin
+        # Sort by trip count
+        sorted_counts = np.sort(gdf['count'])
 
+        # Compute cumulative sum of trips and normalize
+        cumulative_trips = np.cumsum(sorted_counts) / sorted_counts.sum()
+
+        # Compute cumulative percentage of segments
+        cumulative_segments = np.linspace(0, 1, len(sorted_counts))
+
+        # Plot
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.barh(bin_edges[:-1], hist, height=np.diff(bin_edges), color='#3498db', edgecolor='black', alpha=0.7)
+        ax.plot(cumulative_segments * 100, cumulative_trips * 100, color='#3498db', linewidth=2)
 
-        ax.set_ylabel("Trip Count Bins")  # Y-axis now represents trip count bins
-        ax.set_xlabel("Number of Segments")  # X-axis represents the count of segments per bin
-        ax.set_title("Distribution of Segments by Trip Count Bins")
+        # Reference Line (Perfect Equality)
+        ax.plot([0, 100], [0, 100], linestyle='--', color='gray', alpha=0.7)  # Diagonal Line
+
+        # Labels & Formatting
+        ax.set_xlabel("Cumulative % of Segments")
+        ax.set_ylabel("Cumulative % of Trips")
+        ax.set_title("What % of Segments Account for What % of Trips?")
+        ax.grid(True, linestyle="--", alpha=0.6)
 
         st.pyplot(fig)
+

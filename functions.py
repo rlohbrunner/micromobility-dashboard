@@ -1,3 +1,5 @@
+# First pass data scraping functions
+
 def get_valid_cities():
     global valid_cities  # Access the global variable
     if 'valid_cities' in globals():

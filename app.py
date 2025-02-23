@@ -14,7 +14,8 @@ from functions2 import (
     filter_top_1_percent, 
     merge_connected_segments, 
     plot_linestrings, 
-    summary_statistics
+    summary_statistics,
+    plot_trip_count_histogram
 )
 
 # STREAMLIT UI
@@ -91,6 +92,8 @@ else:
     st.subheader("Routes")
     map_output = plot_linestrings(st.session_state.gdf)
     folium_static(map_output)
+    # Display Histogram
+    plot_trip_count_histogram(st.session_state.gdf)
     # Display summary statistics
     summary_statistics(st.session_state.gdf)
 

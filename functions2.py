@@ -10,6 +10,7 @@ import streamlit as st
 from streamlit_folium import folium_static
 import os
 from scipy.stats import percentileofscore 
+import matplotlib.pyplot as plt
 
 # FUNCTIONS
 def filter_top_1_percent(gdf):
@@ -181,3 +182,26 @@ def summary_statistics(gdf):
     st.subheader("Summary Statistics")
     st.write(f"**Total Route Segments in Selection:** {total_routes}")
     st.write(f"**Per Segment Trip Count (Min / Q1 / Median / Q3 / Max):** {min_count:.0f} / {q1_count:.0f} / {median_count:.0f} / {q3_count:.0f} / {max_count:.0f}")
+
+
+def plot_trip_count_histogram(gdf):
+    """
+    Plots a histogram of trip counts for route segments.
+
+    Parameters:
+        gdf (GeoDataFrame): Data containing the 'count' column.
+
+    Returns:
+        None (Displays histogram in Streamlit)
+    """
+    if 'count' in gdf.columns:
+        st.subheader("Trip Count Distribution")
+        
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.hist(gdf['count'], bins=30, color='#3498db', edgecolor='black', alpha=0.7)
+        
+        ax.set_xlabel("Number of Trips")
+        ax.set_ylabel("Number of Segments")
+        ax.set_title("Distribution of Trip Counts Across Route Segments")
+
+        st.pyplot(fig)

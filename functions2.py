@@ -205,3 +205,25 @@ def plot_trip_count_histogram(gdf):
         ax.set_title("Distribution of Trip Counts Across Route Segments")
 
         st.pyplot(fig)
+
+def plot_trip_count_histogram_horizontal(gdf):
+    """
+    Plots a horizontal histogram of trip counts for route segments.
+
+    Parameters:
+        gdf (GeoDataFrame): Data containing the 'count' column.
+
+    Returns:
+        None (Displays histogram in Streamlit)
+    """
+    if 'count' in gdf.columns:
+        st.subheader("Trip Count Distribution (Horizontal)")
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.hist(gdf['count'], bins=30, color='#3498db', edgecolor='black', alpha=0.7, orientation='horizontal')
+
+        ax.set_ylabel("Number of Trips")  # Now Y-axis represents trip counts
+        ax.set_xlabel("Number of Segments")  # Now X-axis represents segment count
+        ax.set_title("Distribution of Trip Counts Across Route Segments (Flipped)")
+
+        st.pyplot(fig)

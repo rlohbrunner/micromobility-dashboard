@@ -206,9 +206,10 @@ def plot_trip_count_histogram(gdf):
 
         st.pyplot(fig)
 
-def plot_trip_count_histogram_horizontal(gdf):
+def plot_trip_count_histogram_flipped(gdf):
     """
-    Plots a horizontal histogram of trip counts for route segments.
+    Plots a flipped histogram where the y-axis represents trip count bins, and
+    the x-axis represents the number of segments in each bin.
 
     Parameters:
         gdf (GeoDataFrame): Data containing the 'count' column.
@@ -217,13 +218,17 @@ def plot_trip_count_histogram_horizontal(gdf):
         None (Displays histogram in Streamlit)
     """
     if 'count' in gdf.columns:
-        st.subheader("Trip Count Distribution (Horizontal)")
+        st.subheader("Trip Count Distribution (Flipped)")
+
+        # Compute histogram bins
+        bins = np.histogram_bin_edges(gdf['count'], bins=30)  # Create bins
+        hist, bin_edges = np.histogram(gdf['count'], bins=bins)  # Get counts per bin
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.hist(gdf['count'], bins=30, color='#3498db', edgecolor='black', alpha=0.7, orientation='horizontal')
+        ax.barh(bin_edges[:-1], hist, height=np.diff(bin_edges), color='#3498db', edgecolor='black', alpha=0.7)
 
-        ax.set_ylabel("Number of Trips")  # Now Y-axis represents trip counts
-        ax.set_xlabel("Number of Segments")  # Now X-axis represents segment count
-        ax.set_title("Distribution of Trip Counts Across Route Segments (Flipped)")
+        ax.set_ylabel("Trip Count Bins")  # Y-axis now represents trip count bins
+        ax.set_xlabel("Number of Segments")  # X-axis represents the count of segments per bin
+        ax.set_title("Distribution of Segments by Trip Count Bins")
 
         st.pyplot(fig)

@@ -96,7 +96,7 @@ else:
     # Display Histograms
     plot_trip_count_histogram(st.session_state.gdf)
     # Plots CDF
-    plot_trip_count_cumulative(st.session_state.gdf)
+    #plot_trip_count_cumulative(st.session_state.gdf)
     # Display summary statistics
     summary_statistics(st.session_state.gdf)
 

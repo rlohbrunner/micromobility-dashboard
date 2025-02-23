@@ -210,7 +210,7 @@ def plot_trip_count_cumulative(gdf):
     """
     Plots a cumulative distribution answering:
     "What percentage of segments account for what percentage of trips?"
-
+    
     Parameters:
         gdf (GeoDataFrame): Data containing the 'count' column.
 
@@ -220,27 +220,29 @@ def plot_trip_count_cumulative(gdf):
     if 'count' in gdf.columns:
         st.subheader("Cumulative Trip Distribution")
 
-        # Sort by trip count
-        sorted_counts = np.sort(gdf['count'])
+        # Sort segments by trip count (Descending)
+        sorted_counts = np.sort(gdf['count'])[::-1]  # Highest trip counts first
 
-        # Compute cumulative sum of trips and normalize
-        cumulative_trips = np.cumsum(sorted_counts) / sorted_counts.sum()
+        # Compute cumulative sum of trips and normalize to 100%
+        cumulative_trips = np.cumsum(sorted_counts) / sorted_counts.sum() * 100
 
         # Compute cumulative percentage of segments
-        cumulative_segments = np.linspace(0, 1, len(sorted_counts))
+        cumulative_segments = np.linspace(0, 100, len(sorted_counts))  # Normalize to 100%
 
         # Plot
         fig, ax = plt.subplots(figsize=(8, 6))
-        ax.plot(cumulative_segments * 100, cumulative_trips * 100, color='#3498db', linewidth=2)
+        ax.plot(cumulative_segments, cumulative_trips, color='#3498db', linewidth=2, label="Observed Distribution")
 
         # Reference Line (Perfect Equality)
-        ax.plot([0, 100], [0, 100], linestyle='--', color='gray', alpha=0.7)  # Diagonal Line
+        ax.plot([0, 100], [0, 100], linestyle='--', color='gray', alpha=0.7, label="Perfect Equality")
 
         # Labels & Formatting
         ax.set_xlabel("Cumulative % of Segments")
         ax.set_ylabel("Cumulative % of Trips")
         ax.set_title("What % of Segments Account for What % of Trips?")
+        ax.legend()
         ax.grid(True, linestyle="--", alpha=0.6)
 
         st.pyplot(fig)
+
 
